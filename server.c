@@ -111,7 +111,12 @@ void handle_listener(int sockfd, struct pollfd** fds, size_t* fd_count, size_t* 
   add_fd(fds, fd_count, fd_size, new_fd);
 }
 
-void handle_connections(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
+void close_fd(struct pollfd* fds, size_t* fd_count, int i) {
+  close(fds[i].fd);
+  remove_fd(fds, fd_count, i);
+}
+
+int handle_connection(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
   char buffer[CLIENT_BUFFER];
   memset(buffer, 0, CLIENT_BUFFER);
   int bytes_recv = recv(fds[i].fd, buffer, CLIENT_BUFFER, 0);
@@ -120,9 +125,7 @@ void handle_connections(int sockfd, int i, struct pollfd* fds, size_t* fd_count)
     // No bytes received, client has closed the connection
     case 0: {
       printf("client closed (1)\n");
-      close(fds[i].fd);
-      remove_fd(fds, fd_count, i);
-      break;
+      return 1;
     }
     // Error
     case -1: {
@@ -136,9 +139,8 @@ void handle_connections(int sockfd, int i, struct pollfd* fds, size_t* fd_count)
         if (send(fds[i].fd, "Goodbye!", 8, 0) == -1) {
           fprintf(stderr, "send error: %d\n", errno);
         }
-        close(fds[i].fd);
-        remove_fd(fds, fd_count, i);
         printf("client closed (2)\n");
+        return 1;
       } else {
         printf("Sending to all clients: %s\n", buffer);
         // send to all other peeps
@@ -153,6 +155,13 @@ void handle_connections(int sockfd, int i, struct pollfd* fds, size_t* fd_count)
       break;
     }
   }
+  return 0;
+}
+
+void remove_fds(int* to_remove, int cnt, struct pollfd* fds, size_t* fd_count) {
+  for (int i = 0; i < cnt; i++) {
+    close_fd(fds, fd_count, to_remove[i]);
+  }
 }
 
 int run(int sockfd, struct pollfd* fds, size_t fd_count, size_t fd_size) {
@@ -162,7 +171,8 @@ int run(int sockfd, struct pollfd* fds, size_t fd_count, size_t fd_size) {
       fprintf(stderr, "error poll %d\n", errno);
       return -1;
     }
-
+    int to_remove[fd_count];
+    int idx = 0;
     // loop through all the fd and check if they are ready
     for (int i = 0; i < fd_count; i++) {
       // check if fd is ready
@@ -171,10 +181,15 @@ int run(int sockfd, struct pollfd* fds, size_t fd_count, size_t fd_size) {
         if (fds[i].fd == sockfd) {
           handle_listener(sockfd, &fds, &fd_count, &fd_size);
         } else {
-          handle_connections(sockfd, i, fds, &fd_count);
+          int remove = handle_connection(sockfd, i, fds, &fd_count);
+          if (remove == 1) {
+            to_remove[idx++] = i;
+          }
         }
       }
     }
+
+    remove_fds(to_remove, idx, fds, &fd_count);
   }
   return 0;
 }

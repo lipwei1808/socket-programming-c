@@ -83,6 +83,7 @@ void* runner(void* arg) {
   printf("Sockfd: %d\n", *sockfd);
   while (sd == 0) {
     char message[1024];
+    memset(message, 0, 1024);
     int bytes;
     if ((bytes = recv(*sockfd, message, 1024, 0)) == -1) {
       fprintf(stderr, "recv error %d\n", errno);
