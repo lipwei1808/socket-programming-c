@@ -166,15 +166,20 @@ void remove_fds(int* to_remove, int cnt, struct pollfd* fds, size_t* fd_count) {
 
 int run(int sockfd, struct pollfd* fds, size_t fd_count, size_t fd_size) {
   while (1) {
+    printf("Polling...\n");
     int cnt = poll(fds, fd_count, -1);
     if (cnt == -1) {
       fprintf(stderr, "error poll %d\n", errno);
       return -1;
     }
+    printf("Polled: %d\n", cnt);
     int to_remove[fd_count];
     int idx = 0;
+
+    int cur_size = fd_count;
     // loop through all the fd and check if they are ready
-    for (int i = 0; i < fd_count; i++) {
+    for (int i = 0; i < cur_size; i++) {
+      printf("Looping through sockets: %d, fd_count: %zu\n", i, fd_count);
       // check if fd is ready
       if (fds[i].revents & POLLIN) {
         printf("Found a pollable socket idx: %d, socket: %d out of %zu sockets\n", i, fds[i].fd, fd_count);
