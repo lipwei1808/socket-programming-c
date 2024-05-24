@@ -30,7 +30,7 @@ int get_listener_socket(char* port) {
   hints.ai_flags = AI_PASSIVE;
 
   int status;
-  if ((status = getaddrinfo("localhost", port, &hints, &res)) != 0) {
+  if ((status = getaddrinfo(NULL, port, &hints, &res)) != 0) {
     fprintf(stderr, "error getaddrinfo: %s\n", gai_strerror(status));
     return -1;
   }
