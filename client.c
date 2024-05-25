@@ -9,6 +9,8 @@
 #include <string.h>
 #include <pthread.h>  
 
+#include "message.h"
+
 int sd = 0;
 
 void* get_in_addr(struct sockaddr* sa) {
@@ -60,17 +62,22 @@ int get_connection_socket(char* hostname, char* port) {
   return sockfd;
 }
 
-void run(int sockfd) {
+void run(int sockfd, char* name) {
   char buffer[1024];
   while (1) {
     // printf("Enter: ");
     while (fgets(buffer, 1024, stdin) == NULL && !feof(stdin));
-
+    buffer[strlen(buffer) - 1] = '\0';
     printf("You entered: %s\n", buffer);
     if (strncmp(buffer, "exit", 4) == 0 || strncmp(buffer, "quit", 4) == 0) {
       sd = 1;
     }
-    if (send(sockfd, buffer, 1024, 0) == -1) {
+
+    char b[1024];
+    // TODO: strlen(buffer) currentyl includes the "newline" char
+    Message* msg = message_create(strlen(name), strlen(buffer), name, buffer);
+    message_marshal(msg, b);
+    if (send(sockfd, b, 1024, 0) == -1) {
       fprintf(stderr, "error send %d\n", errno);
       continue;
     }
@@ -100,8 +107,8 @@ void* runner(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc < 3) {
-    fprintf(stderr, "usage: ./client [hostname] [port]");
+  if (argc < 4) {
+    fprintf(stderr, "usage: ./client [hostname] [port] [name]");
     return 1;
   }
 
@@ -117,7 +124,7 @@ int main(int argc, char* argv[]) {
   pthread_create(&t, NULL, runner, (void*) &sockfd);
   
   // get user input
-  run(sockfd);
+  run(sockfd, argv[3]);
   
   pthread_join(t, NULL);
   close(sockfd);

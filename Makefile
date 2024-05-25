@@ -7,11 +7,11 @@ SRCS := server.c client.c
 
 all: build/client build/server
 
-build/client: client.o
+build/client: client.o message.o
 							@echo "Linking $@"
 							@$(LD) -o $@ $^
 
-build/server: server.o
+build/server: server.o message.o
 							@echo "Linking $@"
 							@$(LD) -o $@ $^
 
@@ -21,6 +21,6 @@ build/server: server.o
 clean: 
 	rm -rf build	
 
-.INTERMEDIATE: client.o server.o
+.INTERMEDIATE: client.o server.o message.o
 
 build: ; @mkdir -p $@

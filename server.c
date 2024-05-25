@@ -9,6 +9,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include "message.h"
+
 #define CLIENT_BUFFER 1024
 
 void* get_in_addr(struct sockaddr* sa) {
@@ -134,21 +136,23 @@ int handle_connection(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
     }
     // Data successfully sent by client
     default: {
-      printf("Rceived: %s\n", buffer);
-      if (strncmp(buffer, "exit", 4) == 0 || strncmp(buffer, "quit", 4) == 0) {
+      Message* msg = message_unmarshal(buffer);
+      printf("Received from: [%s], data: [%s]\n", msg->name, msg->data);
+      if (strncmp(msg->data, "exit", 4) == 0 || strncmp(msg->data, "quit", 4) == 0) {
         if (send(fds[i].fd, "Goodbye!", 8, 0) == -1) {
           fprintf(stderr, "send error: %d\n", errno);
         }
         printf("client closed (2)\n");
         return 1;
-      } else {
-        printf("Sending to all clients: %s\n", buffer);
-        // send to all other peeps
-        for (int j = 0; j < *fd_count; j++) {
-          if (fds[j].fd != sockfd && fds[j].fd != fds[i].fd) {
-            if (send(fds[j].fd, buffer, strlen(buffer), 0) == -1) {
-              fprintf(stderr, "send error: %d\n", errno);
-            }
+      } 
+
+      printf("Sending to all clients: %s\n", buffer);
+      // Message* forwarded_message = message_create(7, strlen)
+      // send to all other peeps
+      for (int j = 0; j < *fd_count; j++) {
+        if (fds[j].fd != sockfd && fds[j].fd != fds[i].fd) {
+          if (send(fds[j].fd, buffer, strlen(buffer), 0) == -1) {
+            fprintf(stderr, "send error: %d\n", errno);
           }
         }
       }
