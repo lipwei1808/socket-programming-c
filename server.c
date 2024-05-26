@@ -147,11 +147,14 @@ int handle_connection(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
       } 
 
       printf("Sending to all clients: %s\n", buffer);
-      // Message* forwarded_message = message_create(7, strlen)
+      char b[1024];
+      message_marshal(msg, b);
+      printf("TEST: %d\n", *b);
+      // Message* forwarded_message = message_create(6, strlen)
       // send to all other peeps
       for (int j = 0; j < *fd_count; j++) {
         if (fds[j].fd != sockfd && fds[j].fd != fds[i].fd) {
-          if (send(fds[j].fd, buffer, strlen(buffer), 0) == -1) {
+          if (send(fds[j].fd, b, 1024, 0) == -1) {
             fprintf(stderr, "send error: %d\n", errno);
           }
         }

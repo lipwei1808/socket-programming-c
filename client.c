@@ -74,7 +74,6 @@ void run(int sockfd, char* name) {
     }
 
     char b[1024];
-    // TODO: strlen(buffer) currentyl includes the "newline" char
     Message* msg = message_create(strlen(name), strlen(buffer), name, buffer);
     message_marshal(msg, b);
     if (send(sockfd, b, 1024, 0) == -1) {
@@ -89,10 +88,10 @@ void* runner(void* arg) {
   int* sockfd = (int*) arg;
   printf("Sockfd: %d\n", *sockfd);
   while (sd == 0) {
-    char message[1024];
-    memset(message, 0, 1024);
+    char buffer[1024];
+    memset(buffer, 0, 1024);
     int bytes;
-    if ((bytes = recv(*sockfd, message, 1024, 0)) == -1) {
+    if ((bytes = recv(*sockfd, buffer, 1024, 0)) == -1) {
       fprintf(stderr, "recv error %d\n", errno);
       continue;
     }
@@ -100,7 +99,8 @@ void* runner(void* arg) {
       printf("Server stopped\n");
       break;
     }
-    printf("[FROM SERVER]: %s\n", message);
+    Message* msg = message_unmarshal(buffer);
+    printf("[FROM %s]: %s\n", msg->name, msg->data);
   }
   printf("runner stopping...\n");
   return NULL;
