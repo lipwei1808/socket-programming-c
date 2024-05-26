@@ -109,7 +109,6 @@ void handle_listener(int sockfd, struct pollfd** fds, size_t* fd_count, size_t* 
     fprintf(stderr, "error accepting new connection %d\n", errno);
     return;
   }
-
   add_fd(fds, fd_count, fd_size, new_fd);
 }
 
@@ -149,8 +148,7 @@ int handle_connection(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
       printf("Sending to all clients: %s\n", buffer);
       char b[1024];
       message_marshal(msg, b);
-      printf("TEST: %d\n", *b);
-      // Message* forwarded_message = message_create(6, strlen)
+
       // send to all other peeps
       for (int j = 0; j < *fd_count; j++) {
         if (fds[j].fd != sockfd && fds[j].fd != fds[i].fd) {
@@ -159,6 +157,8 @@ int handle_connection(int sockfd, int i, struct pollfd* fds, size_t* fd_count) {
           }
         }
       }
+
+      message_delete(msg);
       break;
     }
   }

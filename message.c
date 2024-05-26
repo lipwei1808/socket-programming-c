@@ -18,7 +18,6 @@ Message* message_unmarshal(char* buffer) {
   strncpy(data, buffer + 8 + name_length, data_length);
   name[strlen(name)] = '\0';
   data[strlen(data)] = '\0';
-  printf("%lu, %lu\n", strlen(name), strlen(data));
   return message_create(name_length, data_length, name, data);
 }
 

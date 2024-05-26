@@ -22,4 +22,6 @@ Message *message_unmarshal(char *data);
 
 void message_marshal(Message* msg, char* buffer);
 
+void message_delete(Message* msg);
+
 #endif

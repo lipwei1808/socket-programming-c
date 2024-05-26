@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
@@ -65,7 +66,7 @@ int get_connection_socket(char* hostname, char* port) {
 void run(int sockfd, char* name) {
   char buffer[1024];
   while (1) {
-    // printf("Enter: ");
+    printf("Enter: ");
     while (fgets(buffer, 1024, stdin) == NULL && !feof(stdin));
     buffer[strlen(buffer) - 1] = '\0';
     printf("You entered: %s\n", buffer);
@@ -76,6 +77,7 @@ void run(int sockfd, char* name) {
     char b[1024];
     Message* msg = message_create(strlen(name), strlen(buffer), name, buffer);
     message_marshal(msg, b);
+    message_delete(msg);
     if (send(sockfd, b, 1024, 0) == -1) {
       fprintf(stderr, "error send %d\n", errno);
       continue;
@@ -101,8 +103,10 @@ void* runner(void* arg) {
     }
     Message* msg = message_unmarshal(buffer);
     printf("[FROM %s]: %s\n", msg->name, msg->data);
+    message_delete(msg);
   }
   printf("runner stopping...\n");
+  write(STDIN_FILENO, "\n",0);
   return NULL;
 }
 
@@ -128,6 +132,5 @@ int main(int argc, char* argv[]) {
   
   pthread_join(t, NULL);
   close(sockfd);
-  
   return 0;
 }
